@@ -1,0 +1,8 @@
+/.metadata/
+/Debug/
+.DS_Store
+.settings
+*.launch
+.project
+.cproject
+.metadata
