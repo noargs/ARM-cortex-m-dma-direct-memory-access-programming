@@ -99,6 +99,18 @@ void uart2_init(void)
 
 void dma1_init(void)
 {
+  /** 1. enable the peripheral clock for the dma1 */
+  /** 2. identify the stream which is suitable for your peripheral */
+  /** 3. identify the channel number on which uart2 peripheral sends the dma request */
+  /** 4. program the source address, program the destination address */
+  /** 5. program number of data items to send */
+  /** 6. the direction (transfer mode) of data transfer, m2p, p2m, m2m */
+  /** 7. program the source and destination data width */
+  /** 8. direct mode or fifo mode (8a. if in fifo then select the fifo threshold as well) */
+  /** 9. enable the circular mode if required */
+  /** 10. single transfer or burst transfer */
+  /** 11. configure the stream priority */
+  /** 12. enable the stream */
 
 }
 
