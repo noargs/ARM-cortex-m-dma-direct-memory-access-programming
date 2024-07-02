@@ -8,6 +8,8 @@ void uart2_init(void);
 void dma1_init(void);
 void send_data(void);
 
+char message[] = "Hello world\r\n";
+
 int main(void)
 {
   button_init();
@@ -99,10 +101,10 @@ void uart2_init(void)
 
 void dma1_init(void)
 {
-  /** 1. enable the peripheral clock for the dma1 */
-  /** 2. identify the stream which is suitable for your peripheral */
-  /** 3. identify the channel number on which uart2 peripheral sends the dma request */
-  /** 4. program the source address, program the destination address */
+  /** 1. enable the peripheral clock for the dma1 (f411 block diagram, datasheet page: 15) */
+  /** 2. identify the stream which is suitable for your peripheral (Stream6; RM page: 170, table 27 and 28) */
+  /** 3. identify the channel number on which uart2 peripheral sends the dma request (Channel4; RM page: 170, table 27 and 28) */
+  /** 4. program the source address (Memory), program the destination address (Peripheral) */
   /** 5. program number of data items to send */
   /** 6. the direction (transfer mode) of data transfer, m2p, p2m, m2m */
   /** 7. program the source and destination data width */
@@ -112,12 +114,42 @@ void dma1_init(void)
   /** 11. configure the stream priority */
   /** 12. enable the stream */
 
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+
+  DMA_TypeDef *dma1 = DMA1;
+  DMA_Stream_TypeDef *stream6 = DMA1_Stream6;
+
+  stream6->CR &= ~DMA_SxCR_CHSEL;
+  stream6->CR |= (0x4UL << DMA_SxCR_CHSEL_Pos);   // 0b100 = channel 4
+
+  USART_TypeDef *uart2 = USART2;
+  stream6->M0AR = (uint32_t)message;
+  stream6->PAR = (uint32_t)&uart2->DR;
+
+  uint32_t length = sizeof(message);
+  stream6->NDTR = length;
+
+  stream6->CR &= ~DMA_SxCR_DIR;    // reset value of SxCR is 0x0000 0000, just for brevity
+  stream6->CR |= DMA_SxCR_DIR_0;   // m2p
+
+  stream6->CR &= ~DMA_SxCR_MSIZE;  // 0b00 = 1 Byte memory data size
+  stream6->CR &= ~DMA_SxCR_PSIZE;  // 0b00 = 1 Byte peripheral data size
+
+  stream6->FCR |= DMA_SxFCR_DMDIS; // 0b1 = Direct mode disabled means FIFO will be enabled
+  stream6->FCR |= DMA_SxFCR_FTH;   // if FIFO on then 0b11 = FIFO threshold selection register; full FIFO
+
+  stream6->CR &= ~DMA_SxCR_CIRC;   // Circular mode disabled by default, for brevity
+
+  stream6->CR &= ~DMA_SxCR_MBURST; // Memory burst transfer configuration, 0b00 = single transfer by default, for brevity
+  stream6->CR &= ~DMA_SxCR_PBURST; // Peripheral burst transfer configuration, 0b00 = single transfer by default, for brevity
+
+  stream6->CR &= ~DMA_SxCR_PL;     // Priority level for stream, by default 0b00 = Low, for brevity
+
+  stream6->CR |= DMA_SxCR_EN;      // Enabled the stream
 }
 
 void send_data(void)
 {
-  char message[] = "Hello world\r\n";
-
   uint32_t leng = sizeof(message);
 
   for (uint32_t i=0; i< leng; i++)
